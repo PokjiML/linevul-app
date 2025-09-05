@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Vulnerability Analyzer</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        textarea { width: 100%; height: 300px; box-sizing: border-box; font-family: monospace; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        #results { margin-top: 2em; }
+        pre { background: #eee; padding: 1em; border-radius: 4px; white-space: pre-wrap; }
+        .line { display: flex; }
+        .line-number { min-width: 40px; color: #999; text-align: right; padding-right: 10px; user-select: none; }
+        .line-code { flex-grow: 1; }
+        .vulnerable { background-color: #ffdddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Line Vulnerability Analyzer</h1>
+        <p>Enter C/C++ code below to analyze it for potential vulnerabilities.</p>
+        <textarea id="codeInput" placeholder="Enter your code here..."></textarea>
+        <br><br>
+        <button onclick="analyzeCode()">Analyze Code</button>
+        <div id="results">
+            <h2>Results</h2>
+            <pre id="resultOutput">Analysis results will be shown here.</pre>
+        </div>
+    </div>
+
+    <script>
+        async function analyzeCode() {
+            const code = document.getElementById('codeInput').value;
+            const resultOutput = document.getElementById('resultOutput');
+            resultOutput.textContent = 'Analyzing...';
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code, threshold: 0.6 }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(code, data.predictions);
+            } catch (error) {
+                resultOutput.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        function displayResults(code, predictions) {
+            const resultOutput = document.getElementById('resultOutput');
+            resultOutput.innerHTML = ''; // Clear previous results
+
+            const lines = code.split('\n');
+            lines.forEach((lineContent, index) => {
+                const lineNum = index + 1;
+                const prediction = predictions.find(p => p.line === lineNum);
+                
+                const lineDiv = document.createElement('div');
+                lineDiv.classList.add('line');
+                if (prediction && prediction.vulnerable === 1) {
+                    lineDiv.classList.add('vulnerable');
+                }
+
+                const lineNumSpan = document.createElement('span');
+                lineNumSpan.classList.add('line-number');
+                lineNumSpan.textContent = lineNum;
+
+                const lineCodeSpan = document.createElement('span');
+                lineCodeSpan.classList.add('line-code');
+                lineCodeSpan.textContent = lineContent;
+
+                lineDiv.appendChild(lineNumSpan);
+                lineDiv.appendChild(lineCodeSpan);
+                resultOutput.appendChild(lineDiv);
+            });
+        }
+    </script>
+</body>
+</html>

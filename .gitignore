@@ -1,0 +1,4 @@
+# Ignore model weights and checkpoints
+app/model/model.pth
+app/.vscode/
+app/__pycache__/
