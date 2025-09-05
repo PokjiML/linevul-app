@@ -1,0 +1,1 @@
+Due to file size constraints I coudn't have uploaded the .pth model in the repository
